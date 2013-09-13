@@ -1,0 +1,21 @@
+<VirtualHost *:80>
+	ServerName VHOSTNAME
+	DocumentRoot SITES/VHOSTNAME/htdocs
+
+	<Directory SITES/VHOSTNAME/htdocs>
+		Options Indexes FollowSymLinks MultiViews Includes
+		AllowOverride All
+		Order allow,deny
+		allow from all
+	</Directory>
+
+	ErrorLog SITES/logs/VHOSTNAME-error.log
+
+	# Possible values include: debug, info, notice, warn, error, crit,
+	# alert, emerg.
+	LogLevel warn
+
+	CustomLog SITES/logs/VHOSTNAME-access.log combined
+
+</VirtualHost>
+

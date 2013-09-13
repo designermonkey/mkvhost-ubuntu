@@ -1,0 +1,27 @@
+#! /usr/bin/env bash
+
+readonly ERROR_SUDO=2
+
+if [[ $(whoami) != "root" ]]; then
+    runsudo;
+fi
+
+runsudo() {
+    echo "mkvhost needs root access. Please run as sudo";
+    exit $ERROR_SUDO
+}
+
+main() {
+    ln -s ./template.http /etc/apache2/sites-available/template.http
+    ln -s ./mkvhost /usr/local/bin/mkvhost
+
+    chmod a+x ./mkvhost
+}
+
+echo "Installing mkvhost."
+
+main
+
+echo "Installed links at:"
+echo "/usr/local/bin/mkvhost"
+echo "/etc/apache2/sites-available/template.http"

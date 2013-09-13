@@ -1,0 +1,250 @@
+#!/usr/bin/env bash
+
+VIRTUALHOST=""
+USERNAME=$SUDO_USER
+GROUPNAME="www-data"
+VHOSTS="/etc/apache2/sites-available"
+SITES="/data/sites"
+TEMPLATE="/etc/apache2/sites-available/template.http"
+IPV4="127.0.0.1"
+
+LOOPBACK=0
+VERBOSE=0
+
+readonly VERSION="1.0"
+readonly ERROR_SUDO=2
+readonly ERROR_USAGE=3
+
+
+runsudo() {
+    echo "mkvhost needs root access. Please run as sudo";
+    exit $ERROR_SUDO
+}
+
+usage() {
+    echo "mkvhostrepo [<options>] <vhostname>";
+    exit $ERROR_USAGE
+}
+
+usage_long() {
+less -FRSX << EOF
+USAGE
+    mkvhost [<options>] <vhostname>
+
+
+DESCRIPTION
+    Create a new virtualhost on your Ubuntu system.
+
+    Uses a simple default template to get a virtualhost up and running.
+    The template to use is configurable to allow your own way of working.
+
+
+OPTIONS
+    -h, --help          Shows this help screen.
+    -u, --user          Configure the username to give ownership of the virtualhost.
+    -g, --group         Configure the group to give ownership of the virtualhost.
+    -V, --vhosts        Configure the location of your virtualhost configuration files.
+    -s, --sites         Configure the location of your folder to contain the virtualhost http root.
+    -i, -ipv4           Change the local IP address.
+    -l, --loopback      Add a record in the hosts file to loopback on this machine.
+    -vv, --verbose      Output messages during processing.
+    -v, --version       Shows the version number for this script.
+    -t, --template      Specify a template file to use for the virtualhost
+
+
+TEMPLATE
+    A custom template can be specified to use instead of the bundled simple template.
+    There are specific values that are needed in the template to be replaced with
+    values from the script.
+
+    VHOSTNAME           Wherever you want the supplied virtualhost name to be placed
+                        inside the template.
+    USERNAME            Wherever you want the supplied or default user name to be placed
+                        inside the template.
+    SITES               Wherever you want the supplied or default sites path to be placed
+                        inside the template.
+
+VHOSTNAME
+    The name for a virtualhost can be anything you want in a normal url format
+
+    www.example.com
+    local.example.com
+
+    When setting a name that has no global DNS record, you will need to specify
+    the -l, --loopback option to ensure your machine finds the host locally.
+
+EOF
+exit 0
+}
+
+show_version() {
+    echo "mkvhost version ${VERSION}"
+    exit 0
+}
+
+create_virtualhost() {
+    if [[ -e ${VHOSTS}/${VIRTUALHOST}.conf ]]; then
+        if [[ $VERBOSE == 1 ]]; then
+            echo "${VHOSTS}/${VIRTUALHOST}.conf already exists. Skipping creation.";
+        fi
+    else
+        if [[ ! -e ${TEMPLATE} ]]; then
+            if [[ $VERBOSE == 1 ]]; then
+                echo "${TEMPLATE} does not exist. Cannot create ${VHOSTS}/${VIRTUALHOST}.";
+            fi
+        else
+            cat ${TEMPLATE} | sed "s/VHOSTNAME/${VIRTUALHOST}/g" | sed "s/USERNAME/${USERNAME}/g" | sed "s/SITES/${SITES}/g" > ${VHOSTS}/${VIRTUALHOST}.conf
+        fi
+    fi
+}
+
+create_filesystem() {
+    if [[ ! -e ${SITES}/${VIRTUALHOST} ]]; then
+        if [[ $VERBOSE == 1 ]]; then
+            echo "${SITES}/${VIRTUALHOST} folder already exists. Skipping creation.";
+        fi
+    else
+        mkdir -p ${SITES}/${VIRTUALHOST}/htdocs ${SITES}/${VIRTUALHOST}/logs;
+        chmod -R 775 ${SITES}/${VIRTUALHOST};
+    fi
+
+    chown -R ${USERNAME}:${GROUPNAME} ${SITES}/${VIRTUALHOST}
+}
+
+create_loopback() {
+    grep "${IPV4} ${VIRTUALHOST}" /etc/hosts;
+    if [[ $? -eq 0 ]]; then
+        if [[ $VERBOSE == 1 ]]; then
+            echo "Hostname already in hosts file. Skipping."
+        fi
+    else
+        echo "" >> /etc/hosts
+        echo "${IPV4} ${VIRTUALHOST}" >> /etc/hosts
+        echo "" >> /etc/hosts
+    fi
+}
+
+main() {
+    create_virtualhost
+    create_filesystem
+
+    if [[ $LOOPBACK = 1 ]]; then
+        create_loopback
+    fi
+
+    a2ensite ${VHOSTS}/${VIRTUALHOST}.conf
+    service apache2 reload
+}
+
+
+if [[ $(whoami) != "root" ]]; then
+    runsudo;
+fi
+
+if [[ $# = 0 ]]; then
+    usage;
+fi
+
+while test $# != 0
+do
+    case "$1" in
+        -v|--version)
+            show_version
+            ;;
+        -h|--help)
+            usage_long
+            ;;
+        -u|--user*)
+            case "$#,$1" in
+                *,*=*)
+                    echo "it is: ${1}"
+                    USERNAME=$(expr "z$1" : 'z-[^=]*=\(.*\)')
+                    ;;
+                *)
+                    if ! echo "$2" | egrep -q '^-'; then
+                        USERNAME="$2"
+                        shift
+                    fi
+                    ;;
+            esac
+            ;;
+        -g|--group*)
+            case "$#,$1" in
+                *,*=*)
+                    GROUPNAME=$(expr "z$1" : 'z-[^=]*=\(.*\)')
+                    ;;
+                *)
+                    if ! echo "$2" | egrep -q '^-'; then
+                        GROUPNAME="$2"
+                        shift
+                    fi
+                    ;;
+            esac
+            ;;
+        -V|--vhosts*)
+            case "$#,$1" in
+                *,*=*)
+                    VHOSTS=$(expr "z$1" : 'z-[^=]*=\(.*\)')
+                    ;;
+                *)
+                    if ! echo "$2" | egrep -q '^-'; then
+                        VHOSTS="$2"
+                        shift
+                    fi
+                    ;;
+            esac
+            ;;
+        -s|--sites*)
+            case "$#,$1" in
+                *,*=*)
+                    SITES=$(expr "z$1" : 'z-[^=]*=\(.*\)')
+                    ;;
+                *)
+                    if ! echo "$2" | egrep -q '^-'; then
+                        SITES="$2"
+                        shift
+                    fi
+                    ;;
+            esac
+            ;;
+        -i|--ipv4*)
+            case "$#,$1" in
+                *,*=*)
+                    IPV4=$(expr "z$1" : 'z-[^=]*=\(.*\)')
+                    ;;
+                *)
+                    if ! echo "$2" | egrep -q '^-'; then
+                        IPV4="$2"
+                        shift
+                    fi
+                    ;;
+            esac
+            ;;
+        -t|--template*)
+            case "$#,$1" in
+                *,*=*)
+                    TEMPLATE=$(expr "z$1" : 'z-[^=]*=\(.*\)')
+                    ;;
+                *)
+                    if ! echo "$2" | egrep -q '^-'; then
+                        TEMPLATE="$2"
+                        shift
+                    fi
+                    ;;
+            esac
+            ;;
+        -l|--loopback)
+            LOOPBACK=1
+            ;;
+        -vv|--verbose)
+            VERBOSE=1
+            ;;
+        *)
+            [ -n "$1" ] && VIRTUALHOST=$1
+            ;;
+    esac
+    shift
+done
+
+main
+
