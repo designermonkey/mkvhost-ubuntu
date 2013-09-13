@@ -10,9 +10,19 @@ This script defaults the location of any virtualhost file paths to `/data/sites/
 
 If this isn't to your tastes, you can override it with the `-s` or `--sites` option below, or modify the script.
 
+## Installation
+
+Clone the repo to a suitable location on your server like `/opt/mkvhost`
+
+    git clone git://github.com/designermonkey/mkvhost-ubuntu.git /opt/mkvhost
+
+Run the `install` script to create the correct links on your filesystem. This will make sure the script is callable from your command prompt without having to specify the path.
+
+    /opt/mkvhost/install
+
 ## Usage
 
-Usage couldn't be simpler.
+Once installed, usage couldn't be simpler.
 
     mkvhost [<options>] <vhostname>
 
