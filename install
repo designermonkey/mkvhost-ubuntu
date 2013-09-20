@@ -12,10 +12,10 @@ runsudo() {
 }
 
 main() {
-    ln -s ./template.http /etc/apache2/sites-available/template.http
-    ln -s ./mkvhost /usr/local/bin/mkvhost
+    ln -s $(pwd)/template.http /etc/apache2/sites-available/template.http
+    ln -s $(pwd)/mkvhost /usr/local/bin/mkvhost
 
-    chmod a+x ./mkvhost
+    chmod a+x $(pwd)/mkvhost
 }
 
 echo "Installing mkvhost."
