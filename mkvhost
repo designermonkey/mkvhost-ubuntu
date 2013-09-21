@@ -114,7 +114,7 @@ create_virtualhost() {
                 echo "${TEMPLATE} does not exist. Cannot create ${VHOSTS}/${VIRTUALHOST}.";
             fi
         else
-            cat ${TEMPLATE} | sed "s/VHOSTNAME/${VIRTUALHOST}/g" | sed "s/USERNAME/${USERNAME}/g" | sed "s/SITES/${SITES}/g" > ${VHOSTS}/${VIRTUALHOST}.conf
+            cat ${TEMPLATE} | sed "s@VHOSTNAME@${VIRTUALHOST}@g" | sed "s@USERNAME@${USERNAME}@g" | sed "s@SITES@${SITES}@g" > ${VHOSTS}/${VIRTUALHOST}.conf
         fi
     fi
 }
