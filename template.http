@@ -9,13 +9,13 @@
 		allow from all
 	</Directory>
 
-	ErrorLog SITES/logs/VHOSTNAME-error.log
+	ErrorLog SITES/VHOSTNAME/logs/VHOSTNAME-error.log
 
 	# Possible values include: debug, info, notice, warn, error, crit,
 	# alert, emerg.
 	LogLevel warn
 
-	CustomLog SITES/logs/VHOSTNAME-access.log combined
+	CustomLog SITES/VHOSTNAME/logs/VHOSTNAME-access.log combined
 
 </VirtualHost>
 
